@@ -3,14 +3,12 @@
 export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { signInWithGoogle } from '@/services/supabase/auth';
 import { motion } from 'framer-motion';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleGoogleSignIn() {
     setError('');
