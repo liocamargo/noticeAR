@@ -4,36 +4,32 @@ export const dynamic = 'force-dynamic';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { signIn } from '@/services/supabase/auth';
+import { signInWithGoogle } from '@/services/supabase/auth';
 import { motion } from 'framer-motion';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleGoogleSignIn() {
     setError('');
     setLoading(true);
 
     try {
-      const { data, error } = await signIn(email, password);
+      const { data, error: signInError } = await signInWithGoogle();
 
-      if (error) {
-        setError(error.message);
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
         return;
       }
 
-      if (data?.session) {
-        router.push('/feed');
+      if (data?.url) {
+        window.location.href = data.url;
       }
     } catch (err) {
       setError('Error al iniciar sesión');
-    } finally {
       setLoading(false);
     }
   }
@@ -50,35 +46,7 @@ export default function LoginPage() {
         <p className="text-gray-600">Tinder de noticias argentinas</p>
       </div>
 
-      <form onSubmit={handleLogin} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="tu@email.com"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Contraseña
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="••••••••"
-            required
-          />
-        </div>
-
+      <div className="space-y-4">
         {error && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -91,19 +59,43 @@ export default function LoginPage() {
 
         <motion.button
           whileTap={{ scale: 0.98 }}
-          type="submit"
+          onClick={handleGoogleSignIn}
           disabled={loading}
-          className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-semibold py-2 rounded-lg transition"
+          className="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
         >
-          {loading ? 'Iniciando...' : 'Iniciar sesión'}
+          {loading ? (
+            <>
+              <div className="animate-spin">⏳</div>
+              Iniciando...
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="currentColor"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              Inicia sesión con Google
+            </>
+          )}
         </motion.button>
-      </form>
+      </div>
 
-      <p className="text-center text-gray-600">
-        ¿No tienes cuenta?{' '}
-        <Link href="/register" className="text-blue-500 font-semibold hover:underline">
-          Registrarse
-        </Link>
+      <p className="text-center text-sm text-gray-500">
+        Al iniciar sesión aceptas nuestros términos de servicio
       </p>
     </motion.div>
   );
