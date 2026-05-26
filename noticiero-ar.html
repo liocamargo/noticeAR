@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Noticiero AR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── TOKENS ── */
+:root {
+  --bg:       #f4f5f7;
+  --surface:  #ffffff;
+  --card:     #ffffff;
+  --border:   #e2e4ea;
+  --text:     #0f1117;
+  --text-2:   #5a5f72;
+  --text-3:   #a0a3b1;
+  --accent:   #2563eb;
+  --green:    #16a34a;
+  --orange:   #d97706;
+  --red:      #dc2626;
+  --shadow:   0 2px 12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+  --font: 'Sora', system-ui, sans-serif;
+  --r: 16px;
+  --r-sm: 10px;
+  --transition: background 0.25s, color 0.25s, border-color 0.25s;
+}
+
+[data-theme="dark"] {
+  --bg:       #0d0f12;
+  --surface:  #161820;
+  --card:     #1d1f28;
+  --border:   rgba(255,255,255,0.08);
+  --text:     #eeeef2;
+  --text-2:   #8a8b9a;
+  --text-3:   #44475a;
+  --shadow:   0 2px 12px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+}
+
+html, body {
+  height: 100%; width: 100%;
+  background: var(--bg);
+  font-family: var(--font);
+  color: var(--text);
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+/* ── APP ── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  width: 100%;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 58px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+  transition: var(--transition);
+}
+
+.h-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.h-logo {
+  width: 32px; height: 32px;
+  background: var(--text);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+[data-theme="dark"] .h-logo { background: #fff; }
+.h-logo svg { stroke: var(--bg); }
+[data-theme="dark"] .h-logo svg { stroke: #0d0f12; }
+
+.h-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text);
+}
+.h-date {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 1px;
+  text-transform: capitalize;
+}
+
+.h-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.h-pill {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 30px;
+  white-space: nowrap;
+  transition: var(--transition);
+}
+
+/* Dark mode toggle */
+.theme-btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2);
+  transition: var(--transition), transform 0.2s;
+  flex-shrink: 0;
+}
+.theme-btn:hover { transform: scale(1.08); color: var(--text); }
+.theme-btn svg { transition: opacity 0.2s; }
+.icon-sun  { display: none; }
+.icon-moon { display: block; }
+[data-theme="dark"] .icon-sun  { display: block; }
+[data-theme="dark"] .icon-moon { display: none; }
+
+/* ── CONTENT ── */
+#content { flex: 1; overflow: hidden; position: relative; }
+
+.panel { display: none; position: absolute; inset: 0; }
+.panel.active { display: flex; }
+
+/* ── EXPLORE ── */
+#panel-explore {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ── CARD WRAPPER (full width) ── */
+#card-wrap {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 20px 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── CARD STAGE ── */
+#card-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.shadow-card {
+  position: absolute; inset: 0;
+  background: var(--card);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+.sc1 { transform: scale(0.91) translateY(14px); transform-origin: center bottom; opacity: 0.5; }
+.sc2 { transform: scale(0.955) translateY(7px); transform-origin: center bottom; opacity: 0.75; }
+
+#main-card {
+  position: absolute; inset: 0;
+  background: var(--card);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.33s cubic-bezier(.25,.46,.45,.94), box-shadow 0.2s, background 0.25s, border-color 0.25s;
+  will-change: transform;
+}
+#main-card:active { cursor: grabbing; }
+#main-card.dragging { transition: box-shadow 0.2s !important; }
+#main-card.fly-l { transform: translate(-150%,18%) rotate(-26deg) !important; transition: transform 0.35s ease !important; }
+#main-card.fly-r { transform: translate(150%,18%) rotate(26deg) !important;  transition: transform 0.35s ease !important; }
+#main-card.fly-u { transform: translate(0,-150%) rotate(-4deg) !important;   transition: transform 0.35s ease !important; }
+
+/* ── CARD IMAGE ── */
+.card-img {
+  height: 52%;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+.card-img img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+.card-no-img {
+  width: 100%; height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cat-emoji { font-size: 52px; opacity: 0.18; }
+
+.src-badge {
+  position: absolute;
+  bottom: 10px; left: 12px;
+  color: #fff;
+  padding: 3px 12px;
+  border-radius: 30px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.cat-tag {
+  position: absolute;
+  top: 10px; right: 12px;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+  color: rgba(255,255,255,0.9);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+/* ── CARD BODY ── */
+.card-body {
+  flex: 1;
+  padding: 16px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow: hidden;
+}
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  letter-spacing: -0.3px;
+  transition: color 0.25s;
+}
+.card-desc {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+  transition: color 0.25s;
+}
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  align-self: flex-end;
+}
+.card-link:hover { text-decoration: underline; }
+
+/* ── INDICATORS ── */
+.ind {
+  position: absolute;
+  padding: 6px 14px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  z-index: 20;
+  opacity: 0;
+  pointer-events: none;
+}
+#ind-s  { top: 14px; left: 14px;  background: var(--green);  color: #fff; }
+#ind-sk { top: 14px; right: 14px; background: var(--red);    color: #fff; }
+#ind-f  { top: 42%; left: 50%; transform: translate(-50%,-50%); background: var(--orange); color: #fff; }
+
+/* ── ACTION BAR ── */
+#action-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-shrink: 0;
+  padding: 14px 20px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.action-btn {
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 2px solid;
+  background: var(--surface);
+  cursor: pointer;
+  transition: transform 0.15s, background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.action-btn:hover  { background: var(--bg); }
+.action-btn:active { transform: scale(0.9); }
+
+.btn-skip { width: 52px; height: 52px; border-color: var(--red);    color: var(--red);    }
+.btn-fav  { width: 62px; height: 62px; border-color: var(--orange); color: var(--orange); }
+.btn-save { width: 52px; height: 52px; border-color: var(--green);  color: var(--green);  }
+
+.btn-skip svg, .btn-save svg { width: 22px; height: 22px; }
+.btn-fav  svg { width: 26px; height: 26px; }
+
+
+/* ── FILTER CHIPS ── */
+#filter-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 20px 0;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 6px 14px;
+  border-radius: 30px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.chip:hover { border-color: var(--text-3); color: var(--text); }
+.chip.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface);
+}
+[data-theme="dark"] .chip.active {
+  background: var(--text);
+  color: #0d0f12;
+}
+
+/* ── DONE ── */
+.done-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; padding: 32px; text-align: center;
+}
+.done-wrap svg { color: var(--text-3); }
+.done-wrap p   { font-size: 14px; color: var(--text-2); line-height: 1.7; }
+
+/* ── LIST PANELS ── */
+.list-panel {
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 16px;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg);
+  transition: var(--transition);
+}
+.list-panel::-webkit-scrollbar { width: 4px; }
+.list-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.list-header {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  padding: 0 2px;
+  margin-bottom: 2px;
+}
+
+.mini-card {
+  display: flex;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  text-decoration: none;
+  align-items: flex-start;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.25s;
+  box-shadow: var(--shadow);
+}
+.mini-card:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(37,99,235,0.1); }
+
+.mini-thumb {
+  width: 62px; height: 62px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 26px;
+}
+.mini-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.mini-info { flex: 1; min-width: 0; }
+.mini-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
+.mini-src {
+  font-size: 9px; font-weight: 700; color: #fff;
+  padding: 2px 9px; border-radius: 20px; letter-spacing: 0.4px;
+}
+.mini-cat {
+  font-size: 9px; font-weight: 600;
+  color: var(--text-3);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 2px 8px; border-radius: 20px;
+  transition: var(--transition);
+}
+.mini-title {
+  font-size: 13px; font-weight: 500; color: var(--text);
+  line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+  transition: color 0.25s;
+}
+
+.empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; text-align: center; padding: 40px 24px;
+}
+.empty-state svg { color: var(--text-3); opacity: 0.4; }
+.empty-state h3 { font-size: 15px; font-weight: 600; color: var(--text-2); }
+.empty-state p  { font-size: 13px; color: var(--text-3); line-height: 1.7; }
+
+/* ── BOTTOM NAV ── */
+nav {
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  transition: var(--transition);
+}
+.tab-btn {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px; padding: 10px 4px;
+  background: transparent; border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 10px; font-weight: 500;
+  transition: color 0.2s, background 0.15s;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-btn.active { color: var(--accent); }
+.tab-btn:hover  { background: var(--bg); }
+.tab-btn svg    { width: 20px; height: 20px; stroke-width: 1.8; }
+
+.tab-dot {
+  position: absolute; top: 7px; right: calc(50% - 18px);
+  min-width: 16px; height: 16px;
+  background: var(--red); border-radius: 8px;
+  font-size: 9px; font-weight: 700; color: #fff;
+  display: none; align-items: center; justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--surface);
+  transition: border-color 0.25s;
+}
+
+/* ── LOAD BAR ── */
+#load-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent), #60a5fa);
+  transform-origin: left; transform: scaleX(0);
+  transition: transform 0.4s ease; z-index: 100; opacity: 1;
+}
+
+/* ── RESPONSIVE ── */
+@media (min-width: 640px) {
+  #card-wrap { padding: 28px 28px 16px; }
+  .card-title { font-size: 22px; }
+  .card-desc  { font-size: 13px; }
+  .list-panel { padding: 20px 24px; }
+  .btn-fav { width: 66px; height: 66px; }
+}
+
+@media (max-width: 360px) {
+  header { padding: 0 14px; height: 52px; }
+  .h-title { font-size: 14px; }
+  #card-wrap { padding: 14px 14px 8px; }
+  .card-body { padding: 12px 14px 10px; }
+  .card-title { font-size: 18px; }
+  .card-desc  { font-size: 11px; }
+  .action-zone { padding: 12px 4px; }
+  .az-icon { width: 38px; height: 38px; }
+  .btn-fav  { width: 54px; height: 54px; }
+}
+</style>
+</head>
+<body>
+<div id="load-bar"></div>
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="h-brand">
+      <div class="h-logo">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18l-4-2-4 2-4-2-4 2z"/>
+          <path d="M8 9h8M8 13h5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="h-title">NoticAR</div>
+        <div class="h-date" id="hdate"></div>
+      </div>
+    </div>
+    <div class="h-right">
+      <div class="h-pill" id="hpill">—</div>
+      <button class="theme-btn" onclick="toggleTheme()" aria-label="Cambiar tema">
+        <!-- Moon -->
+        <svg class="icon-moon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+        <!-- Sun -->
+        <svg class="icon-sun" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div id="content">
+
+    <!-- EXPLORE -->
+    <div class="panel active" id="panel-explore">
+      <div id="filter-bar">
+        <button class="chip active" id="chip-all"    onclick="setFilter('all')">Todos</button>
+        <button class="chip"        id="chip-nacional"     onclick="setFilter('nacional')">🇦🇷 Nacional</button>
+        <button class="chip"        id="chip-internacional" onclick="setFilter('internacional')">🌎 Internacional</button>
+      </div>
+      <div id="card-wrap">
+        <div id="card-stage">
+          <div class="shadow-card sc1"></div>
+          <div class="shadow-card sc2"></div>
+          <div id="main-card">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+      </div>
+      <div id="action-bar">
+        <button class="action-btn btn-skip" onclick="doSkip()" aria-label="Saltar">
+          <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <button class="action-btn btn-fav" onclick="doFav()" aria-label="Favorito">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+        <button class="action-btn btn-save" onclick="doSave()" aria-label="Guardar">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- SAVED -->
+    <div class="panel list-panel" id="panel-saved">
+      <div class="list-header" id="saved-header"></div>
+      <div id="saved-content"></div>
+    </div>
+
+    <!-- FAVORITES -->
+    <div class="panel list-panel" id="panel-favorites">
+      <div class="list-header" id="favs-header"></div>
+      <div id="favs-content"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav>
+    <button class="tab-btn" id="tab-favorites" onclick="switchTab('favorites')">
+      <div class="tab-dot" id="dot-fav"></div>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Favoritas
+    </button>
+    <button class="tab-btn active" id="tab-explore" onclick="switchTab('explore')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 22V4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v18l-4-2-4 2-4-2-4 2z"/><path d="M8 9h8M8 13h5"/></svg>
+      Explorar
+    </button>
+    <button class="tab-btn" id="tab-saved" onclick="switchTab('saved')">
+      <div class="tab-dot" id="dot-saved"></div>
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      Guardadas
+    </button>
+  </nav>
+
+</div>
+
+<script>
+// ── SOURCES ─────────────────────────────────────────────────────────────────
+const SOURCES = {
+  infobae:  { name:'Infobae',   color:'#c0392b' },
+  lanacion: { name:'La Nación', color:'#1a56a4' },
+  clarin:   { name:'Clarín',    color:'#d97706' },
+  perfil:   { name:'Perfil',    color:'#0f766e' },
+  ambito:   { name:'Ámbito',    color:'#7c3aed' },
+  pagina12: { name:'Página 12', color:'#334155' },
+};
+
+const CATS = {
+  politica:       { label:'Política',        emoji:'🏛' },
+  economia:       { label:'Economía',        emoji:'📈' },
+  deportes:       { label:'Deportes',        emoji:'⚽' },
+  entretenimiento:{ label:'Entretenimiento', emoji:'🎬' },
+  salud:          { label:'Salud',           emoji:'💊' },
+  tecnologia:     { label:'Tecnología',      emoji:'💻' },
+  mundo:          { label:'Mundo',           emoji:'🌎' },
+  sociedad:       { label:'Sociedad',        emoji:'👥' },
+};
+
+// ── SEED DATA (Infobae scrapeado hoy 26/05/2026) ────────────────────────────
+const SEED = [
+  { title:'En medio de las internas, la mesa política se reúne en Casa Rosada y se prepara un cuarto paquete de reformas al Congreso', desc:'Los principales referentes del oficialismo definieron la agenda legislativa de las próximas semanas. Nuevas medidas económicas estarían en carpeta.', img:null, source:'infobae', cat:'politica', scope:'nacional', link:'https://www.infobae.com/politica/2026/05/26/en-medio-de-las-internas-la-mesa-politica-se-reune-en-casa-rosada-y-se-prepara-un-cuarto-paquete-de-reformas-al-congreso/' },
+  { title:'La destrucción de un mito: la lapidaria crítica de Luca di Montezemolo a la primera Ferrari eléctrica', desc:'El expresidente de la Scuderia Ferrari cargó duramente contra el primer auto eléctrico de la marca italiana, generando debate global sobre el futuro del lujo automotriz.', img:null, source:'infobae', cat:'tecnologia', scope:'internacional', link:'https://www.infobae.com/america/mundo/2026/05/26/la-destruccion-de-un-mito-la-lapidaria-critica-de-luca-di-montezemolo-a-la-primera-ferrari-electrica/' },
+  { title:'Las acciones de Ferrari se desplomaron tras la presentación de su primer auto eléctrico: "El mercado ha hablado"', desc:'Wall Street reaccionó negativamente al anuncio de Ferrari de ingresar al mercado eléctrico. Las acciones cayeron más de un 8% en una sola jornada bursátil.', img:null, source:'infobae', cat:'economia', scope:'internacional', link:'https://www.infobae.com/america/mundo/2026/05/26/las-acciones-de-ferrari-se-desplomaron-tras-la-presentacion-de-su-primer-auto-electrico-el-mercado-ha-hablado/' },
+  { title:'Se conocieron cuáles serán las sedes de entrenamiento de las 48 selecciones que integrarán la Copa del Mundo 2026', desc:'La FIFA reveló la lista completa de los centros de entrenamiento para el Mundial 2026. Argentina tendrá instalaciones de primer nivel para el equipo de Scaloni.', img:null, source:'infobae', cat:'deportes', scope:'nacional', link:'https://www.infobae.com/deportes/2026/05/26/se-conocieron-cuales-seran-las-sedes-de-entrenamiento-de-las-48-selecciones-que-integraran-la-copa-del-mundo-2026/' },
+  { title:'Las diferencias entre EEUU e Irán por el programa nuclear complican las negociaciones para terminar con la guerra en Medio Oriente', desc:'Trump exige que Irán entregue o destruya su uranio enriquecido. Teherán solo aceptaría postergar el programa. Las negociaciones están en un punto crítico.', img:null, source:'infobae', cat:'mundo', scope:'internacional', link:'https://www.infobae.com/estados-unidos/2026/05/26/las-diferencias-entre-eeuu-e-iran-por-el-programa-nuclear-complican-las-negociaciones-para-terminar-con-la-guerra-en-medio-oriente/' },
+  { title:'Mientras la fiebre de la IA aumenta en Silicon Valley, el papa León XIV tiene algo que decir', desc:'El nuevo pontífice tomó posición sobre el desarrollo de la inteligencia artificial, planteando un diálogo entre fe, ética y tecnología que generó debate a nivel global.', img:null, source:'infobae', cat:'tecnologia', scope:'internacional', link:'https://www.infobae.com/america/the-new-york-times/2026/05/26/mientras-la-fiebre-de-la-ia-aumenta-en-silicon-valley-el-papa-leon-xiv-tiene-algo-que-decir/' },
+  { title:'Atlético de Madrid, cerca de romper el mercado de pases: la estrella mundial que ficharía para ser socio de Julián Álvarez', desc:'El club colchonero busca reforzar su ataque con un nombre de elite. Julián Álvarez sería el compañero ideal para la megacontratación que planea el Atleti.', img:null, source:'infobae', cat:'deportes', scope:'internacional', link:'https://www.infobae.com/deportes/2026/05/22/atletico-de-madrid-cerca-de-romper-el-mercado-de-pases-la-estrella-mundial-que-ficharia-para-ser-socio-de-julian-alvarez-y-reemplazar-a-griezmann/' },
+  { title:'El azúcar añadida y sus riesgos reales para la salud: qué dice la ciencia y cómo reducirla', desc:'Un análisis científico revela el impacto real del azúcar añadida en enfermedades cardiovasculares, diabetes y obesidad, con recomendaciones prácticas para reducir su consumo diario.', img:null, source:'infobae', cat:'salud', scope:'nacional', link:'https://www.infobae.com/salud/2026/05/22/el-azucar-anadida-y-sus-riesgos-reales-para-la-salud-que-dice-la-ciencia-y-como-reducirla/' },
+  { title:'La cantidad de personas con trastornos mentales se duplicó desde 1990, reveló un estudio en The Lancet', desc:'Un informe en una de las revistas médicas más prestigiosas del mundo advierte sobre una crisis silenciosa de salud mental que afecta a más de mil millones de personas.', img:null, source:'infobae', cat:'salud', scope:'internacional', link:'https://www.infobae.com/america/ciencia-america/2026/05/22/la-cantidad-de-personas-con-trastornos-mentales-se-duplico-desde-1990-revelo-un-estudio-en-the-lancet/' },
+  { title:'Los medicamentos para bajar de peso podrían tener un sorprendente efecto secundario: detener el cáncer', desc:'Nuevas investigaciones sobre los fármacos GLP-1 sugieren que sus efectos van mucho más allá del control del peso, con indicios prometedores en la lucha contra tumores.', img:null, source:'infobae', cat:'salud', scope:'internacional', link:'https://www.infobae.com/salud/2026/05/22/los-medicamentos-para-bajar-de-peso-podrian-tener-un-sorprendente-efecto-secundario-detener-el-cancer/' },
+  { title:'Lanzan gas lacrimógeno a Ricky Martin durante su concierto en Montenegro', desc:'Un incidente de seguridad interrumpió el show del cantante puertorriqueño en los Balcanes. La policía intervino para dispersar a manifestantes que protestaban cerca del venue.', img:null, source:'infobae', cat:'entretenimiento', scope:'internacional', link:'https://www.infobae.com/entretenimiento/2026/05/22/lanzan-gas-lacrimogeno-a-ricky-martin-durante-su-concierto-en-montenegro/' },
+  { title:"'The Boys': el showrunner explica por qué Queen Maeve no volvió en la última temporada", desc:'Eric Kripke reveló los motivos detrás de la ausencia de Dominique McElligott en el cierre de la serie, dejando a muchos fans con preguntas sin respuesta.', img:null, source:'infobae', cat:'entretenimiento', scope:'internacional', link:'https://www.infobae.com/entretenimiento/2026/05/22/the-boys-el-showrunner-explica-por-que-queen-maeve-no-volvio-en-la-ultima-temporada/' },
+  { title:'"Fue como un año de terapia intensa": Victoria Beckham confesó el peso emocional de narrar su documental', desc:'La diseñadora y ex Spice Girl habló sobre el impacto personal de revivir momentos difíciles de su vida para el documental que ya es furor en todo el mundo.', img:null, source:'infobae', cat:'entretenimiento', scope:'internacional', link:'https://www.infobae.com/entretenimiento/2026/05/22/fue-como-un-ano-de-terapia-intensa-victoria-beckham-confeso-el-peso-emocional-de-narrar-su-documental/' },
+  { title:'Caos en las calles de Nueva York: los aficionados de los Knicks celebran el regreso del equipo a las finales de la NBA', desc:'Miles de hinchas se lanzaron a las calles de Manhattan para festejar el histórico regreso de los New York Knicks a las Finales de la NBA después de décadas de ausencia.', img:null, source:'infobae', cat:'deportes', scope:'internacional', link:'https://www.infobae.com/estados-unidos/2026/05/26/caos-en-las-calles-de-nueva-york-los-aficionados-de-los-knicks-celebran-el-regreso-del-equipo-a-las-finales-de-la-nba/' },
+  { title:'Tras las operaciones militares de EEUU en el sur de Irán, Marco Rubio afirmó que un acuerdo con Teherán podría tardar días', desc:'El Secretario de Estado norteamericano se mostró cauto pero optimista sobre las negociaciones diplomáticas con Irán, en medio de una escalada de tensión militar.', img:null, source:'infobae', cat:'mundo', scope:'internacional', link:'https://www.infobae.com/america/mundo/2026/05/26/tras-los-ataques-defensivos-de-eeuu-en-el-sur-de-iran-marco-rubio-afirmo-que-un-acuerdo-con-teheran-podria-tardar-dias/' },
+  { title:'Mi esposo es un infiel serial. ¿Por qué no puedo dejarlo?', desc:'Una columna del New York Times aborda uno de los fenómenos más complejos de las relaciones modernas: el apego emocional a parejas que nos dañan de forma repetida.', img:null, source:'infobae', cat:'sociedad', scope:'internacional', link:'https://www.infobae.com/america/the-new-york-times/2026/05/26/mi-esposo-es-un-infiel-serial-por-que-no-puedo-dejarlo/' },
+];
+
+// ── RSS ──────────────────────────────────────────────────────────────────────
+const RSS = [
+  { key:'lanacion', url:'https://www.lanacion.com.ar/arc/outboundfeeds/rss/' },
+  { key:'clarin',   url:'https://www.clarin.com/rss/lo_ultimo/' },
+  { key:'perfil',   url:'https://www.perfil.com/feed' },
+  { key:'ambito',   url:'https://www.ambito.com/rss/pages/home.xml' },
+  { key:'pagina12', url:'https://www.pagina12.com.ar/rss' },
+];
+
+// ── FILTER STATE ─
+let activeFilter = 'all';
+
+function setFilter(f){
+  activeFilter = f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  document.getElementById('chip-'+f).classList.add('active');
+  idx = 0;
+  renderCard();
+  updatePill();
+}
+
+function filteredArticles(){
+  if(activeFilter==='all') return articles;
+  return articles.filter(a=>(a.scope||'nacional')===activeFilter);
+}
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let articles=[], idx=0, saved=[], favs=[], flying=false;
+let dragActive=false, startX=0, startY=0, curX=0, curY=0;
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+document.getElementById('hdate').textContent =
+  new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+
+// Prefer system theme on first load
+if(!localStorage.getItem('theme')) {
+  const sys = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', sys);
+}
+
+articles = shuffle([...SEED]);
+renderCard();
+updatePill();
+loadRSS();
+
+// ── THEME ────────────────────────────────────────────────────────────────────
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+}
+const saved_theme = localStorage.getItem('theme');
+if(saved_theme) document.documentElement.setAttribute('data-theme', saved_theme);
+
+// ── RSS LOADER ───────────────────────────────────────────────────────────────
+function stripHtml(h){return(h||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();}
+function imgFrom(h){const m=(h||'').match(/<img[^>]+src=["']([^"']+)["']/i);return m?.[1]||null;}
+
+async function loadRSS(){
+  bar(0.15);
+  const res = await Promise.allSettled(RSS.map(async f=>{
+    try{
+      const r=await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&count=12`);
+      const d=await r.json();
+      if(d.status!=='ok')return[];
+      return (d.items||[]).filter(i=>i.title).map(i=>({
+        title:i.title.trim(),
+        desc:stripHtml(i.description||i.content||'').slice(0,190)+'…',
+        img:i.thumbnail||imgFrom(i.content||i.description)||null,
+        source:f.key,
+        cat:guesscat(i.title+' '+(i.categories||[]).join(' ')),
+        scope:guessscope(i.link||'', i.title||''),
+        link:i.link,
+      }));
+    }catch{return[];}
+  }));
+  bar(0.85);
+  const fresh=res.flatMap(r=>r.status==='fulfilled'?r.value:[]).filter(a=>a.title);
+  if(fresh.length){
+    const seen=new Set(articles.map(a=>a.link));
+    const novo=fresh.filter(a=>!seen.has(a.link));
+    articles=shuffle([...articles,...novo]);
+    updatePill();
+  }
+  bar(1);
+  setTimeout(()=>document.getElementById('load-bar').style.opacity=0,600);
+}
+
+function guesscat(t){
+  if(/política|gobierno|congreso|milei|president|legislat/i.test(t)) return 'politica';
+  if(/deporte|fútbol|futbol|nba|tenis|racing|river|boca|messi|mundial|seleccion/i.test(t)) return 'deportes';
+  if(/economía|dólar|inflacion|mercado|bolsa|finanza|banco|peso/i.test(t)) return 'economia';
+  if(/salud|cancer|médico|hospital|vacuna|enfermedad|medicament/i.test(t)) return 'salud';
+  if(/tecnología|ia\b|inteligencia|celular|apple|google|meta|software|startup/i.test(t)) return 'tecnologia';
+  if(/entret|serie|pelicula|música|famoso|celebrity|film|show/i.test(t)) return 'entretenimiento';
+  if(/mundo|iran|eeuu|guerra|trump|rusia|china|conflicto|ucrania/i.test(t)) return 'mundo';
+  return 'sociedad';
+}
+
+function guessscope(link, title){
+  if(/\/america\/|\/(mundo|estados-unidos|international|the-new-york-times|eeuu|iran|rusia|china|trump|ucrania|europa|brasil|mexico|latam|bbc|reuters)\//i.test(link)) return 'internacional';
+  if(/iran|trump|rusia|china|eeuu|guerra|ucrania|biden|zelensky|bbc|reuters|mundial(?!-arg)|fifa|nba|nfl|premier|championsleague/i.test(title)) return 'internacional';
+  return 'nacional';
+}
+
+// ── RENDER CARD ──────────────────────────────────────────────────────────────
+function renderCard(){
+  const card=document.getElementById('main-card');
+  if(!card)return;
+  const pool=filteredArticles();
+  const cur=pool[idx];
+
+  if(!cur){
+    card.innerHTML=`
+      <div class="done-wrap" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:32px;text-align:center;">
+        <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24" style="color:var(--text-3)">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <p style="font-size:14px;color:var(--text-2);line-height:1.7;">¡Todo leído por hoy!<br>Cargando más noticias en segundo plano…</p>
+      </div>`;
+    return;
+  }
+
+  const src=SOURCES[cur.source]||SOURCES.infobae;
+  const cat=CATS[cur.cat]||CATS.sociedad;
+
+  card.style.transform='';
+  card.className='';
+  card.innerHTML=`
+    <div class="ind" id="ind-s">GUARDAR ♥</div>
+    <div class="ind" id="ind-sk">SALTAR ✕</div>
+    <div class="ind" id="ind-f">★ FAVORITO</div>
+    <div class="card-img" style="background:${cat.emoji==='📈'?'#f0fdf4':cat.emoji==='🏛'?'#eff6ff':cat.emoji==='⚽'?'#fefce8':cat.emoji==='🌎'?'#f0f9ff':cat.emoji==='💊'?'#fdf4ff':cat.emoji==='💻'?'#f0fdf4':'#f8fafc'}">
+      ${cur.img?`<img src="${esc(cur.img)}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`:''}
+      <div class="card-no-img" style="${cur.img?'display:none':''}">
+        <span class="cat-emoji">${cat.emoji}</span>
+      </div>
+      <div class="src-badge" style="background:${src.color}">${src.name}</div>
+      <div class="cat-tag">${cat.label}</div>
+    </div>
+    <div class="card-body">
+      <p class="card-title">${esc(cur.title)}</p>
+      <p class="card-desc">${esc(cur.desc)}</p>
+      <a class="card-link" href="${esc(cur.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+        Leer nota completa
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </a>
+    </div>`;
+  bindDrag();
+}
+
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────────
+function doSkip(){fly('l');}
+function doSave(){const c=filteredArticles()[idx];if(c)saved=[c,...saved];dot('saved',saved.length);fly('r');}
+function doFav() {const c=filteredArticles()[idx];if(c){favs=[c,...favs];saved=[c,...saved];}dot('fav',favs.length);dot('saved',saved.length);fly('u');}
+
+function fly(dir){
+  if(flying)return;
+  flying=true;
+  const card=document.getElementById('main-card');
+  if(!card){advance();return;}
+  card.classList.add(`fly-${dir}`);
+  setTimeout(()=>{flying=false;idx++;renderCard();updatePill();},360);
+}
+
+// ── DRAG ─────────────────────────────────────────────────────────────────────
+function bindDrag(){
+  const card=document.getElementById('main-card');
+  if(!card)return;
+  card.addEventListener('pointerdown',e=>{
+    if(flying)return;
+    card.setPointerCapture(e.pointerId);
+    startX=e.clientX;startY=e.clientY;
+    curX=0;curY=0;dragActive=true;
+    card.classList.add('dragging');
+  });
+  card.addEventListener('pointermove',e=>{
+    if(!dragActive)return;
+    curX=e.clientX-startX;curY=e.clientY-startY;
+    card.style.transform=`translate(${curX}px,${curY}px) rotate(${curX*0.07}deg)`;
+    showInd(curX,curY);
+  });
+  const end=()=>{
+    if(!dragActive)return;
+    dragActive=false;
+    card.classList.remove('dragging');
+    hideInd();
+    if(curX>80)doSave();
+    else if(curX<-80)doSkip();
+    else if(curY<-80)doFav();
+    else{card.style.transform='';card.style.transition='';}
+  };
+  card.addEventListener('pointerup',end);
+  card.addEventListener('pointercancel',end);
+}
+
+function showInd(x,y){
+  const s=document.getElementById('ind-s');
+  const sk=document.getElementById('ind-sk');
+  const f=document.getElementById('ind-f');
+  if(!s)return;
+  const c=v=>Math.min(1,v);
+  if(x>40){s.style.opacity=c(x/80);sk.style.opacity=0;f.style.opacity=0;}
+  else if(x<-40){sk.style.opacity=c(-x/80);s.style.opacity=0;f.style.opacity=0;}
+  else if(y<-50){f.style.opacity=c(-y/80);s.style.opacity=0;sk.style.opacity=0;}
+  else hideInd();
+}
+function hideInd(){['ind-s','ind-sk','ind-f'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.opacity=0;});}
+
+// ── LISTS ─────────────────────────────────────────────────────────────────────
+function renderList(which){
+  const data=which==='saved'?saved:favs;
+  const content=document.getElementById(which==='saved'?'saved-content':'favs-content');
+  const header=document.getElementById(which==='saved'?'saved-header':'favs-header');
+  if(!content)return;
+  header.textContent=which==='saved'?`${saved.length} notas guardadas`:`${favs.length} notas favoritas`;
+  if(data.length===0){
+    content.innerHTML=`<div class="empty-state" style="display:flex">
+      <svg width="44" height="44" fill="none" stroke="currentColor" stroke-width="1.4" viewBox="0 0 24 24">
+        ${which==='saved'
+          ?'<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>'
+          :'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>'}
+      </svg>
+      <h3>${which==='saved'?'Nada guardado aún':'Sin favoritas aún'}</h3>
+      <p>${which==='saved'
+        ?'Deslizá una nota hacia la derecha<br>o presioná el botón ♥ para guardarla acá.'
+        :'Deslizá una nota hacia arriba<br>o presioná el botón ★ para marcarla como favorita.'}</p>
+    </div>`;
+  } else {
+    content.innerHTML=`<div style="display:flex;flex-direction:column;gap:10px;">`
+      +data.map(a=>{
+        const src=SOURCES[a.source]||SOURCES.infobae;
+        const cat=CATS[a.cat]||CATS.sociedad;
+        return`<a class="mini-card" href="${esc(a.link)}" target="_blank" rel="noopener">
+          <div class="mini-thumb" style="background:var(--bg)">
+            ${a.img?`<img src="${esc(a.img)}" alt="" onerror="this.style.display='none'">`:`<span>${cat.emoji}</span>`}
+          </div>
+          <div class="mini-info">
+            <div class="mini-meta">
+              <span class="mini-src" style="background:${src.color}">${esc(src.name)}</span>
+              <span class="mini-cat">${cat.label}</span>
+            </div>
+            <p class="mini-title">${esc(a.title)}</p>
+          </div>
+        </a>`;
+      }).join('')
+      +`</div>`;
+  }
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(which){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`panel-${which}`).classList.add('active');
+  document.getElementById(`tab-${which}`).classList.add('active');
+  if(which!=='explore') renderList(which);
+  updatePill(which);
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function updatePill(which){
+  const w=which||document.querySelector('.tab-btn.active')?.id?.replace('tab-','')||'explore';
+  const el=document.getElementById('hpill');
+  if(w==='explore') el.textContent=`${Math.max(0,filteredArticles().length-idx)} pendientes`;
+  else if(w==='saved') el.textContent=`${saved.length} guardadas`;
+  else if(w==='favorites') el.textContent=`${favs.length} favoritas`;
+}
+
+function dot(type,count){
+  const el=document.getElementById(`dot-${type}`);
+  if(!el)return;
+  el.textContent=count;
+  el.style.display=count>0?'flex':'none';
+}
+
+function bar(v){
+  const el=document.getElementById('load-bar');
+  el.style.opacity=1;
+  el.style.transform=`scaleX(${v})`;
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('panel-explore').classList.contains('active'))return;
+  if(flying||!filteredArticles()[idx])return;
+  if(e.key==='ArrowLeft')doSkip();
+  if(e.key==='ArrowRight')doSave();
+  if(e.key==='ArrowUp')doFav();
+});
+</script>
+</body>
+</html>
