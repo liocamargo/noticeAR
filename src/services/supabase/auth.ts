@@ -1,10 +1,14 @@
 import { supabase } from './client';
 
 export async function signInWithGoogle() {
+  const redirectUrl = typeof window !== 'undefined'
+    ? `${window.location.protocol}//${window.location.host}/auth/callback`
+    : 'https://noticear.vercel.app/auth/callback';
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: redirectUrl,
     },
   });
   return { data, error };
