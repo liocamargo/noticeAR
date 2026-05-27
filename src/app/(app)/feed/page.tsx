@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import SwipeStack from '@/components/SwipeStack';
 import SwipeButtons from '@/components/SwipeButtons';
 import CategoryFilter from '@/components/CategoryFilter';
+import Header from '@/components/Header';
 import { useNews } from '@/hooks/useNews';
 import { useInteractions } from '@/hooks/useInteractions';
 import type { NewsArticle } from '@/types';
@@ -45,15 +46,13 @@ export default function FeedPage() {
   }, [news, saveInteraction, markAsSeen]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 space-y-8">
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold text-gray-900">NoticeAR</h1>
-        <p className="text-gray-600">Swipea noticias a tu ritmo</p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <Header />
 
-      <div className="w-full">
-        <CategoryFilter />
-      </div>
+      <div className="flex-1 flex flex-col items-center justify-center px-4 space-y-8">
+        <div className="w-full">
+          <CategoryFilter />
+        </div>
 
       <div className="w-full flex flex-col items-center relative">
         <SwipeStack
@@ -71,6 +70,7 @@ export default function FeedPage() {
             />
           </div>
         )}
+      </div>
       </div>
     </div>
   );
