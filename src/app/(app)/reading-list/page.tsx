@@ -8,11 +8,9 @@ import { useInteractions } from '@/hooks/useInteractions';
 import { motion } from 'framer-motion';
 
 export default function ReadingListPage() {
-  const { interactions } = useInteractions();
+  const { todayInteractions } = useInteractions();
 
-  const readingList = interactions.filter((interaction) =>
-    !interaction.is_favorite && interaction.interaction_type === 'like'
-  );
+  const readingList = todayInteractions;
 
   if (readingList.length === 0) {
     return (
