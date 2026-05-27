@@ -32,6 +32,23 @@ export default function LoginPage() {
     }
   }
 
+  function handleTestMode() {
+    // Crear sesión de prueba temporal
+    const testSession = {
+      user: {
+        id: 'test-user-' + Math.random().toString(36).substr(2, 9),
+        email: 'prueba@noticeAR.local',
+        user_metadata: {
+          full_name: 'Usuario de Prueba',
+          avatar_url: '🧪',
+        },
+      },
+      isTestMode: true,
+    };
+    localStorage.setItem('noticeAR_testSession', JSON.stringify(testSession));
+    window.location.href = '/feed';
+  }
+
   const instructivos = [
     {
       icon: '👆',
@@ -113,6 +130,14 @@ export default function LoginPage() {
                 Inicia sesión con Google
               </>
             )}
+          </motion.button>
+
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={handleTestMode}
+            className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center gap-2"
+          >
+            🧪 Prueba sin login
           </motion.button>
         </div>
 

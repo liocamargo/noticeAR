@@ -11,6 +11,14 @@ export default function RootPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Verificar sesión de prueba temporal
+      const testSession = localStorage.getItem('noticeAR_testSession');
+      if (testSession) {
+        router.push('/feed');
+        return;
+      }
+
+      // Verificar sesión de Supabase
       const { session } = await getSession();
       if (session) {
         router.push('/feed');
