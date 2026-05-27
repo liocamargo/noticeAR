@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import { signInWithGoogle } from '@/services/supabase/auth';
 import { motion } from 'framer-motion';
+import { Hand, Heart, X, Star } from 'lucide-react';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
@@ -51,22 +52,22 @@ export default function LoginPage() {
 
   const instructivos = [
     {
-      icon: '👆',
+      icon: Hand,
       title: 'Desliza',
       description: 'Te apareceran noticias una por una',
     },
     {
-      icon: '👍',
+      icon: Heart,
       title: 'Me gusta',
       description: 'Guarda para leer después',
     },
     {
-      icon: '❌',
+      icon: X,
       title: 'No me gusta',
       description: 'Descarta la noticia',
     },
     {
-      icon: '⭐',
+      icon: Star,
       title: 'Favoritos',
       description: 'Marca para siempre en tus favoritos',
     },
@@ -156,21 +157,26 @@ export default function LoginPage() {
           ¿Cómo funciona?
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {instructivos.map((item, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + index * 0.1 }}
-              className="text-center space-y-2 p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50"
-            >
-              <div className="text-4xl">{item.icon}</div>
-              <h3 className="font-semibold text-gray-900 text-sm">
-                {item.title}
-              </h3>
-              <p className="text-xs text-gray-600">{item.description}</p>
-            </motion.div>
-          ))}
+          {instructivos.map((item, index) => {
+            const Icon = item.icon;
+            return (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 + index * 0.1 }}
+                className="text-center space-y-2 p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50"
+              >
+                <div className="flex justify-center">
+                  <Icon size={40} className="text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900 text-sm">
+                  {item.title}
+                </h3>
+                <p className="text-xs text-gray-600">{item.description}</p>
+              </motion.div>
+            );
+          })}
         </div>
       </motion.div>
     </div>

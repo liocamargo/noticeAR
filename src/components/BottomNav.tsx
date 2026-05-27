@@ -3,21 +3,23 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { Heart, Newspaper, Bookmark } from 'lucide-react';
 
 export default function BottomNav() {
   const pathname = usePathname();
 
   const navItems = [
-    { href: '/feed', label: 'Swipe', icon: '📰' },
-    { href: '/today', label: 'Hoy', icon: '📅' },
-    { href: '/favorites', label: 'Favoritos', icon: '⭐' },
+    { href: '/favorites', label: 'Favoritos', icon: Heart },
+    { href: '/feed', label: 'Noticias', icon: Newspaper },
+    { href: '/reading-list', label: 'Por leer', icon: Bookmark },
   ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-2xl">
-      <div className="flex justify-around items-center max-w-md mx-auto">
+      <div className="flex justify-around items-center max-w-2xl mx-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
+          const Icon = item.icon;
           return (
             <Link
               key={item.href}
@@ -30,9 +32,9 @@ export default function BottomNav() {
             >
               <motion.div
                 whileTap={{ scale: 0.9 }}
-                className="space-y-1"
+                className="flex flex-col items-center gap-1"
               >
-                <div className="text-2xl">{item.icon}</div>
+                <Icon size={24} />
                 <div className="text-xs font-semibold">{item.label}</div>
               </motion.div>
             </Link>

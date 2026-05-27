@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { X, Star, Heart } from 'lucide-react';
 
 interface SwipeButtonsProps {
   onSkip: () => void;
@@ -28,9 +29,9 @@ export default function SwipeButtons({
         whileTap="tap"
         onClick={onSkip}
         disabled={disabled}
-        className="w-16 h-16 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-2xl transition"
+        className="w-16 h-16 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition"
       >
-        ✗
+        <X size={28} />
       </motion.button>
 
       <motion.button
@@ -39,9 +40,9 @@ export default function SwipeButtons({
         whileTap="tap"
         onClick={onStar}
         disabled={disabled}
-        className="w-16 h-16 rounded-full bg-yellow-500 text-white shadow-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-2xl transition"
+        className="w-16 h-16 rounded-full bg-yellow-500 text-white shadow-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition"
       >
-        ★
+        <Star size={28} fill="currentColor" />
       </motion.button>
 
       <motion.button
@@ -50,9 +51,9 @@ export default function SwipeButtons({
         whileTap="tap"
         onClick={onLike}
         disabled={disabled}
-        className="w-16 h-16 rounded-full bg-green-500 text-white shadow-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-2xl transition"
+        className="w-16 h-16 rounded-full bg-green-500 text-white shadow-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition"
       >
-        ✓
+        <Heart size={28} fill="currentColor" />
       </motion.button>
     </div>
   );
