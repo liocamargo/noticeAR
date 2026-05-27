@@ -10,13 +10,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Verificar sesión de prueba temporal
       const testSession = localStorage.getItem('noticeAR_testSession');
       if (testSession) {
-        return; // Permitir acceso con sesión de prueba
+        return;
       }
 
-      // Verificar sesión de Supabase
       const { session } = await getSession();
       if (!session) {
         router.push('/login');
@@ -26,9 +24,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, [router]);
 
   return (
-    <main className="pb-24">
-      {children}
+    <div className="h-screen w-screen flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-hidden">
+        {children}
+      </div>
       <BottomNav />
-    </main>
+    </div>
   );
 }

@@ -46,31 +46,31 @@ export default function FeedPage() {
   }, [news, saveInteraction, markAsSeen]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-full flex flex-col">
       <Header />
 
-      <div className="flex-1 flex flex-col items-center justify-center px-4 space-y-8">
+      <div className="flex-1 flex flex-col overflow-hidden px-4 py-4">
         <div className="w-full">
           <CategoryFilter />
         </div>
 
-      <div className="w-full flex flex-col items-center relative">
-        <SwipeStack
-          articles={news}
-          onSwipe={handleSwipe}
-          isLoading={isLoading}
-        />
+        <div className="flex-1 flex flex-col items-center justify-center mt-4">
+          <SwipeStack
+            articles={news}
+            onSwipe={handleSwipe}
+            isLoading={isLoading}
+          />
 
-        {!isLoading && news.length > 0 && (
-          <div className="-mt-16 relative z-10">
-            <SwipeButtons
-              onSkip={handleSkip}
-              onStar={handleStar}
-              onLike={handleLike}
-            />
-          </div>
-        )}
-      </div>
+          {!isLoading && news.length > 0 && (
+            <div className="-mt-16 relative z-10">
+              <SwipeButtons
+                onSkip={handleSkip}
+                onStar={handleStar}
+                onLike={handleLike}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

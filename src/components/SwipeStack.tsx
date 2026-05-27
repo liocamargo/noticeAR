@@ -62,7 +62,7 @@ export default function SwipeStack({
 
   return (
     <div
-      className="relative w-full max-w-md mx-auto h-96 perspective"
+      className="relative w-full max-w-md mx-auto h-64 sm:h-80 md:h-96 perspective"
       {...handlers}
     >
       <AnimatePresence mode="popLayout">
