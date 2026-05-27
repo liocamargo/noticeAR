@@ -55,7 +55,7 @@ export default function FeedPage() {
         <CategoryFilter />
       </div>
 
-      <div className="w-full flex flex-col items-center">
+      <div className="w-full flex flex-col items-center relative">
         <SwipeStack
           articles={news}
           onSwipe={handleSwipe}
@@ -63,11 +63,13 @@ export default function FeedPage() {
         />
 
         {!isLoading && news.length > 0 && (
-          <SwipeButtons
-            onSkip={handleSkip}
-            onStar={handleStar}
-            onLike={handleLike}
-          />
+          <div className="-mt-16 relative z-10">
+            <SwipeButtons
+              onSkip={handleSkip}
+              onStar={handleStar}
+              onLike={handleLike}
+            />
+          </div>
         )}
       </div>
     </div>
