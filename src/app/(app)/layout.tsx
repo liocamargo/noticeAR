@@ -24,8 +24,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   }, [router]);
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-hidden">
+    <div className="h-screen w-screen flex flex-col overflow-hidden bg-black text-white">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {children}
       </div>
       <BottomNav />
